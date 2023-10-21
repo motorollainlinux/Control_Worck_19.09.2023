@@ -18,8 +18,10 @@ class NameGenerate {
         vector<int> CountSumbols(Alphabet.length());
         string result  = "";
         static string Lastreturn;
+        static string LastAlphabet;
         int cursor = 0;
-        if(Lastreturn == "") {
+        if(Lastreturn == "" || LastAlphabet[0] != Alphabet[0]) {
+            LastAlphabet = Alphabet;
             Lastreturn = Alphabet;
             return Alphabet;
         } else if(Lastreturn.length() < LIMIT-4) {
@@ -40,6 +42,7 @@ class NameGenerate {
                 }
             }
             Lastreturn = result;
+            LastAlphabet = Alphabet;
             return result;
         } else {
             for(int i = 0; i < Lastreturn.length(); i++) {
@@ -55,12 +58,16 @@ class NameGenerate {
             if(cursor < Alphabet.length()-1) {
                 CountSumbols[cursor] = 1;
                 CountSumbols[cursor+1]++;
-            } else return NULL;
+            } else {
+                    LastAlphabet = Alphabet;
+                    return NULL;
+                }
             for(int i = 0; i < Alphabet.length(); i++) {
                 for(int j = 0; j < CountSumbols[i]; j++) {
                     result += Alphabet[i];
                 }
             }
+            LastAlphabet = Alphabet;
             Lastreturn = result;
             return result;
         }
@@ -75,13 +82,16 @@ class FoldersCreate {
     time_t t;
     FoldersCreate() {}
     void CreateFolder() {
+        char timebuff[20];
         string Name;
         LOG.open("log.txt", std::ios::app);
         for(;countFolders >= 0; countFolders--) {
             Name = name.Generate(Alphabet);
             mkdir(Name.c_str());
             t = time(NULL);
-            LOG << t << " |Folder generate whis name:\n" << Name << "\n";
+            tm *now = localtime(&t);
+            strftime(timebuff, sizeof(timebuff), "%D %T", now);
+            LOG << timebuff << " |Folder generate whis name:\n" << Name << "\n";
         }
         LOG.close();
     }
@@ -109,8 +119,8 @@ class FoldersCreate {
             cin >> Enter;
             if(Enter.length() > 0) {
                 IsCorrectEnter = true;
-                for(int i = 0; i < Enter.length(); i++) {
-                    if(Enter[i] <= '0' && Enter[i] >= '9')
+                for(int i = 0; i < Enter.length(); i++) { 
+                    if(Enter[i] >= 'a' && Enter[i] <= 'z')
                     IsCorrectEnter = false;
                 }
                 if(!IsCorrectEnter)
@@ -129,6 +139,7 @@ class FilesCreate {
     time_t t;
     FilesCreate() {}
     void CreateFiles() {
+        char timebuff[20];
         LOG.open("log.txt");
         ofstream file;
         for(;FilesCount >= 0; FilesCount--) {
@@ -136,7 +147,9 @@ class FilesCreate {
             file.open(Name);
             file.close();
             t = time(NULL);
-            LOG << t << " | File created whis name:\n" << Name << "\n";
+            tm *now = localtime(&t);
+            strftime(timebuff, sizeof(timebuff), "%D %T", now);
+            LOG << timebuff << " | File created whis name:\n" << Name << "\n";
         }
         LOG.close();
     }
@@ -164,8 +177,8 @@ class FilesCreate {
             cin >> Enter;
             if(Enter.length() > 0) {
                 IsCorrectEnter = true;
-                for(int i = 0; i < Enter.length(); i++) {
-                    if(Enter[i] < '0' && Enter[i] > '9')
+                for(int i = 0; i < Enter.length(); i++) { //!!!
+                    if(Enter[i] >= 'a' && Enter[i] <= 'z')
                     IsCorrectEnter = false;
                 }
                 if(!IsCorrectEnter)
@@ -175,12 +188,78 @@ class FilesCreate {
         }while(!IsCorrectEnter);
     }
 };
+class FoldersDelete{
+    public:
+    string Mask;
+    void Delete() {
+        NameGenerate name;
+        string Name = "";
+        do{
+            Name = name.Generate(Mask);
+        }while(rmdir(Name.c_str()) == 0);
+    }
+    void UserGUI() {
+        string Enter;
+        bool ISCorrectEnter = false;
+        do{
+            cout << "Enter mask to delete folders: ";
+            cin >> Enter;
+            cin.clear();
+            if(Enter.length() > 0) {
+                for(int i = 0; i < Enter.length(); i++) {
+                    if(Enter[i] >= 'a' && Enter[i] <= 'z') {
+                        ISCorrectEnter = true;
+                    }
+                }
+                if(!ISCorrectEnter) 
+                cout << "Invalid enter!\n";
+                else Mask = Enter;
+            } else cout << "Invalid enter!\n";
+        }while(!ISCorrectEnter);
+    }
+};
+class FilesDelete {
+    public:
+    string Mask;
+    void Delete() {
+        NameGenerate name;
+        string Name;
+        do {
+            Name = name.Generate(Mask);
+        }while(remove(Name.c_str()) == 0);
+    }
+    void UserGUI() {
+        string Enter;
+        bool ISCorrectEnter = false;
+        do{
+            cout << "Enter mask to delete files: ";
+            cin >> Enter;
+            cin.clear();
+            if(Enter.length() > 0) {
+                for(int i = 0; i < Enter.length(); i++) {
+                    if(Enter[i] >= 'a' && Enter[i] <= 'z') {
+                        ISCorrectEnter = true;
+                    }
+                }
+                if(!ISCorrectEnter) 
+                cout << "Invalid enter!\n";
+                else Mask = Enter;
+            } else cout << "Invalid enter!\n";
+        }while(!ISCorrectEnter);
+    }
+};
 int main() {
     FoldersCreate foc;
     FilesCreate fic;
+    FoldersDelete fod;
+    FilesDelete fid;
     foc.UserGui();
     fic.UserGui();
     foc.CreateFolder();
     fic.CreateFiles();
+    fod.UserGUI();
+    fid.UserGUI();
+    fod.Delete();
+    fid.Delete();
     return 0;
 }
